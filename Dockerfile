@@ -7,6 +7,13 @@ RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selectio
 
 # Install poetry and any other dependency that your worker needs.
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    hashcat \
+    john \
+    john-data \
+    pocl-opencl-icd \
+    ocl-icd-opencl-dev \
+    clinfo \
     python3-poetry \
     # Add your dependencies here
     && rm -rf /var/lib/apt/lists/*
@@ -26,9 +33,19 @@ ENV OPENRELIK_PYDEBUG_PORT ${OPENRELIK_PYDEBUG_PORT:-5678}
 # Set working directory
 WORKDIR /openrelik
 
+# Get a decent password list for john/hashcat
+RUN echo "" > password.lst
+RUN curl -s https://raw.githubusercontent.com/danielmiessler/SecLists/285474cf9bff85f3323c5a1ae436f78acd1cb62c/Passwords/UserPassCombo-Jay.txt >> password.lst
+RUN curl -s https://raw.githubusercontent.com/danielmiessler/SecLists/master/Passwords/Common-Credentials/10-million-password-list-top-1000000.txt >> password.lst
+RUN echo ':\nd' > openrelik-password-cracking.rules
+
 # Copy poetry toml and install dependencies
 COPY ./pyproject.toml ./poetry.lock .
 RUN poetry install --no-interaction --no-ansi
+
+# Windows password cracking
+RUN poetry run pip3 install impacket --no-deps 
+
 
 # Copy files needed to build
 COPY . ./

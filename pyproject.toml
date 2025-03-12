@@ -1,15 +1,15 @@
 [tool.poetry]
-name = "openrelik-worker-TEMPLATEWORKERNAME"
+name = "openrelik-worker-os-creds"
 version = "0.1.0"
-description = "Description of the worker"
-authors = ["YOUR NAME <email@example.com>"]
+description = "Extract and bruteforce OS credentials"
+authors = ["Fry <fryx0r@gmail.com>"]
 readme = "README.md"
 package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.10"
 celery = { extras = ["redis"], version = "^5.4.0" }
-openrelik-worker-common = "^0.10.0"
+openrelik-worker-common = "^0.11.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"
