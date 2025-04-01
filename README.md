@@ -1,23 +1,21 @@
-## NOTE: Bootstrap the new worker with `bash bootstrap.sh`!
-
-# Openrelik worker TEMPLATEWORKERNAME
+# Openrelik worker OS Creds Analyzer
 ## Description
-Enter a good description of your worker here.
+Extracts and brute forces Linux and Windows credentials to identify a likely method of compromise.
 
 ## Deploy
 Add the below configuration to the OpenRelik docker-compose.yml file.
 
 ```
-openrelik-worker-TEMPLATEWORKERNAME:
-    container_name: openrelik-worker-TEMPLATEWORKERNAME
-    image: ghcr.io/openrelik/openrelik-worker-TEMPLATEWORKERNAME:latest
+openrelik-worker-os-creds:
+    container_name: openrelik-worker-os-creds
+    image: ghcr.io/openrelik/openrelik-worker-os-creds:latest
     restart: always
     environment:
       - REDIS_URL=redis://openrelik-redis:6379
       - OPENRELIK_PYDEBUG=0
     volumes:
       - ./data:/usr/share/openrelik/data
-    command: "celery --app=src.app worker --task-events --concurrency=4 --loglevel=INFO -Q openrelik-worker-TEMPLATEWORKERNAME"
+    command: "celery --app=src.app worker --task-events --concurrency=4 --loglevel=INFO -Q openrelik-worker-os-creds"
     # ports:
       # - 5678:5678 # For debugging purposes.
 ```

@@ -18,7 +18,6 @@ from openrelik_worker_common.file_utils import create_output_file
 from openrelik_worker_common.task_utils import create_task_result, get_input_files
 from openrelik_worker_common.reporting import serialize_file_report
 
-
 from .app import celery
 
 
@@ -27,6 +26,7 @@ def task_factory(
     task_name_short: str,
     compatible_inputs: dict,
     task_metadata: dict,
+    operate_on_each_file: bool,
     analysis_function: Callable,
     task_report_function: Callable = None,
 ):
@@ -55,47 +55,61 @@ def task_factory(
     ) -> str:
         """Run the appropriate analyzer on input files."""
 
-        input_files = get_input_files(
-            pipe_result, input_files or [], filter=compatible_inputs
-        )
+        input_files = get_input_files(pipe_result,
+                                      input_files or [],
+                                      filter=compatible_inputs)
         output_files = []
         file_reports = []
         task_report = None
 
-        for input_file in input_files:
+        if operate_on_each_file:
+            for input_file in input_files:
+                report_file = create_output_file(
+                    output_path,
+                    display_name=
+                    f"{input_file.get('display_name')}-{task_name_short}-report.md",
+                    data_type=
+                    f"worker:openrelik:os-creds:{task_name_short}:report",
+                )
+
+                # Read the input file to be analyzed.
+                with open(input_file.get("path"), "r", encoding="utf-8") as fh:
+                    creds_file = fh.read()
+
+                # Use the provided analysis function.
+                analysis_report = analysis_function(creds_file)
+                file_report = serialize_file_report(input_file, report_file,
+                                                    analysis_report)
+
+                with open(report_file.path, "w", encoding="utf-8") as fh:
+                    fh.write(analysis_report.to_markdown())
+
+                file_reports.append(file_report)
+                output_files.append(report_file.to_dict())
+        else:
+            # Operate on the directory of files only
+            analysis_report = analysis_function(input_files)
+            task_report = analysis_report
+
             report_file = create_output_file(
                 output_path,
-                display_name=f"{input_file.get('display_name')}-{task_name_short}-report.md",
+                display_name=f"{task_name_short}-report.md",
                 data_type=f"worker:openrelik:os-creds:{task_name_short}:report",
-            )
-
-            # Read the input file to be analyzed.
-            with open(input_file.get("path"), "r", encoding="utf-8") as fh:
-                creds_file = fh.read()
-
-            # Use the provided analysis function.
-            analysis_report = analysis_function(creds_file)
-            file_report = serialize_file_report(
-                input_file, report_file, analysis_report
             )
 
             with open(report_file.path, "w", encoding="utf-8") as fh:
                 fh.write(analysis_report.to_markdown())
-
-            file_reports.append(file_report)
             output_files.append(report_file.to_dict())
 
-        if task_report_function:
-            task_report = task_report_function(file_reports)
-
         if not output_files:
-            raise RuntimeError(f"{task_name_short} didn't create any output files")
+            raise RuntimeError(
+                f"{task_name_short} didn't create any output files")
 
         return create_task_result(
             output_files=output_files,
             workflow_id=workflow_id,
             file_reports=file_reports,
-            task_report=task_report,
+            task_report=task_report.to_dict(),
         )
 
     return creds_analyzer

@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ocl-icd-opencl-dev \
     clinfo \
     python3-poetry \
-    # Add your dependencies here
+    python3-setuptools \
     && rm -rf /var/lib/apt/lists/*
 
 # Configure poetry
@@ -44,8 +44,8 @@ COPY ./pyproject.toml ./poetry.lock .
 RUN poetry install --no-interaction --no-ansi
 
 # Windows password cracking
-RUN poetry run pip3 install impacket --no-deps 
-
+RUN poetry run pip3 install setuptools
+RUN poetry run pip3 install impacket
 
 # Copy files needed to build
 COPY . ./

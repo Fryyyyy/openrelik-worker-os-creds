@@ -25,5 +25,5 @@ if os.getenv("OPENRELIK_PYDEBUG") == "1":
 REDIS_URL = os.getenv("REDIS_URL")
 celery = Celery(broker=REDIS_URL,
                 backend=REDIS_URL,
-                include=["src.linux_acct_task"])
+                include=["src.linux_acct_task", "src.windows_acct_task"])
 redis_client = redis.Redis.from_url(REDIS_URL)

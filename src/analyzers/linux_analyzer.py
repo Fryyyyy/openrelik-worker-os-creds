@@ -15,6 +15,7 @@
 from openrelik_worker_common.reporting import Report, Priority
 from openrelik_worker_common.password_utils import bruteforce_password_hashes
 
+
 def analyze_accts(file_content: str, file_name: str = "shadow") -> Report:
     """Extract accounts from Linux shadow files.
 
@@ -32,8 +33,8 @@ def analyze_accts(file_content: str, file_name: str = "shadow") -> Report:
 
     return analyse_shadow_file(shadow=shadow,
                                path=file_name,
-                               hashes=extracted_credentials,
-                               timeout=None)
+                               hashes=extracted_credentials)
+
 
 def _extract_linux_credentials(shadow):
     """Extract credentials from a Linux shadow files.
@@ -53,6 +54,7 @@ def _extract_linux_credentials(shadow):
         hash_names[password_hash] = username
     return hash_names
 
+
 def analyse_shadow_file(shadow, path, hashes, timeout=300):
     """Analyses a Linux shadow file.
 
@@ -63,14 +65,8 @@ def analyse_shadow_file(shadow, path, hashes, timeout=300):
       timeout (int): Time in seconds to run password bruteforcing.
 
     Returns:
-      Tuple(
-        report_text(str): The report data
-        report_priority(int): The priority of the report (0 - 100)
-        summary(str): A summary of the report (used for task status)
-      )
+      Report
     """
-    print(f"Shadow: {shadow}")
-    print(f"Hashes: {hashes}")
     report = Report("Linux Account Analyzer")
     summary_section = report.add_section()
     details_section = report.add_section()
@@ -81,8 +77,7 @@ def analyse_shadow_file(shadow, path, hashes, timeout=300):
         tmp_dir=None,
         password_list_file_path="/openrelik/password.lst",
         password_rules_file_path="/openrelik/openrelik-password-cracking.rules",
-        timeout=timeout
-    )
+        timeout=timeout)
 
     if weak_passwords:
         priority = Priority.CRITICAL
