@@ -15,6 +15,7 @@ openrelik-worker-common = "^0.11.0"
 pytest = "*"
 pytest-cov = "^5.0.0"
 pytest-mock = "^3.14.0"
+impacket = "^0.12.0"
 
 [build-system]
 requires = ["poetry-core"]
