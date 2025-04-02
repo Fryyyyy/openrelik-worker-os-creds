@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+
 from typing import Callable
 
 from openrelik_worker_common.file_utils import create_output_file
@@ -87,29 +89,45 @@ def task_factory(
                 file_reports.append(file_report)
                 output_files.append(report_file.to_dict())
         else:
-            # Operate on the directory of files only
-            analysis_report = analysis_function(input_files)
-            task_report = analysis_report
+            unique_original_paths = set([
+                os.path.dirname(y.get('original_path', ''))
+                for y in input_files
+            ])
+            for unique_dirname in unique_original_paths:
+                filtered_input_files = [
+                    i for i in input_files if os.path.dirname(
+                        i.get('original_path', '')) == unique_dirname
+                ]
 
-            report_file = create_output_file(
-                output_path,
-                display_name=f"{task_name_short}-report.md",
-                data_type=f"worker:openrelik:os-creds:{task_name_short}:report",
-            )
+                # Operate on the directory of files only
+                analysis_report = analysis_function(filtered_input_files)
+                # task_report = analysis_report
 
-            with open(report_file.path, "w", encoding="utf-8") as fh:
-                fh.write(analysis_report.to_markdown())
-            output_files.append(report_file.to_dict())
+                report_file = create_output_file(
+                    output_path,
+                    display_name=f"{task_name_short}-report.md",
+                    data_type=
+                    f"worker:openrelik:os-creds:{task_name_short}:report",
+                )
 
-        if not output_files:
-            raise RuntimeError(
-                f"{task_name_short} didn't create any output files")
+                file_report = serialize_file_report(filtered_input_files[0],
+                                                    report_file,
+                                                    analysis_report)
+
+                with open(report_file.path, "w", encoding="utf-8") as fh:
+                    fh.write(analysis_report.to_markdown())
+                file_reports.append(file_report)
+                output_files.append(report_file.to_dict())
+
+            if not output_files:
+                raise RuntimeError(
+                    f"{task_name_short} didn't create any output files")
 
         return create_task_result(
             output_files=output_files,
             workflow_id=workflow_id,
             file_reports=file_reports,
-            task_report=task_report.to_dict(),
+            task_report=task_report,
         )
 
     return creds_analyzer
